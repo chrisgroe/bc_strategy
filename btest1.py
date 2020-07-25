@@ -13,7 +13,7 @@ server_time = datetime.fromtimestamp(int(server_ts)/ 1000.0, pytz.utc)
 local_tz = pytz.timezone('Europe/Berlin')
 server_time = local_tz.normalize(server_time)
 print("Server time: %s" %(server_time))
-klines = client.get_historical_klines("BTCEUR", Client.KLINE_INTERVAL_1MINUTE , "1 June, 2020")
+klines = client.get_historical_klines("BTCEUR", Client.KLINE_INTERVAL_1MINUTE , "1 Jan, 2020")
 olines = []
 
 
