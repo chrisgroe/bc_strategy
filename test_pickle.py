@@ -3,6 +3,7 @@ import datetime
 import pytz
 import time
 import pprint
+from tabulate import tabulate
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import timezone
@@ -33,7 +34,7 @@ open_p = [i[1] for i in day]
 close_t = [i[6] for i in day]
 close_p = [i[4] for i in day]
 
-pprint.pprint (day,width=120)
-plt.plot(open_t, open_p,close_t, close_p)
+print (tabulate(day))
+#plt.plot(open_t, open_p,close_t, close_p)
 
-plt.show()
+#plt.show()
