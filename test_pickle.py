@@ -61,14 +61,15 @@ dt_8 = [[i[0], ts_to_localtime(i[0]).strftime("%d.%m.%y %H:%M:%S %z")] for i in 
 dt_16 = [[i[0], ts_to_localtime(i[0]).strftime("%d.%m.%y %H:%M:%S %z")] for i in klines_16]
 
 klines_day = [[
-    ts_to_localtime(a[0]).strftime("%d.%m.%y %H:%M:%S %z"),
-    ts_to_localtime(b[0]).strftime("%d.%m.%y %H:%M:%S %z"), 
+    ts_to_localtime(a[0]),
+    ts_to_localtime(b[0]), 
+
     a[1], 
     b[1], 
     b[1]/a[1]-1.0
 ] for a,b in zip(klines_8, klines_16)]
 open_t = [i[0] for i in klines_8]
-open_p = [i[1] for i in klines_8]
+yield_ = [i[1] for i in klines_8]
 
 print (tabulate(klines_day))
 
@@ -76,3 +77,8 @@ print (tabulate(klines_day))
 yield_of_strategy = (numpy.average([i[4] for i in klines_day]) ) * 100.0
 
 print ("Yield of strategy: %f %%"%(yield_of_strategy))
+open_t = [i[0] for i in klines_day]
+yield_ = [(numpy.average([i[4] for i in klines_day[:idx]]) ) * 100.0 for idx, i in enumerate(klines_day)]
+
+plt.plot(open_t, yield_)
+plt.show()
