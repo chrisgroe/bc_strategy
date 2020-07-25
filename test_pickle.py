@@ -2,6 +2,7 @@ import pickle
 import datetime
 import pytz
 import time
+import pprint
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import timezone
@@ -20,7 +21,7 @@ klines = pickle.load(open("bdcbtc.pickle","rb"))
 print(" oldest klines set opens at: %s"%( ts_to_localtime(klines[0][0])))
 print("newest klines set closes at: %s"%( ts_to_localtime(klines[-1][6])))
 a_ts = localtime_to_ts(datetime.datetime(year=2020, month=6, day=1))
-b_ts = localtime_to_ts(datetime.datetime(year=2020, month=6, day=30)) 
+b_ts = localtime_to_ts(datetime.datetime(year=2020, month=6, day=2)) 
 print(ts_to_localtime(a_ts), ts_to_localtime(b_ts))
 
 
@@ -29,7 +30,10 @@ day = [i for i in klines if i[0]>a_ts and i[6]<b_ts]
 open_t = [i[0] for i in day]
 open_p = [i[1] for i in day]
 
+close_t = [i[6] for i in day]
+close_p = [i[4] for i in day]
 
-plt.plot(open_t, open_p)
+pprint.pprint (day,width=120)
+plt.plot(open_t, open_p,close_t, close_p)
 
 plt.show()
