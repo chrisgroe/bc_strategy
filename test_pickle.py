@@ -100,4 +100,7 @@ for k in klines[1:]:
 open_t = [(i[0]-start_ts)/60.0/60.0/24.0 for i in klines]
 fig, ax = plt.subplots(1)
 ax.plot(open_t[1:], bot_ir)
+ax.set_title("Annualized TWR")
+ax.set_xlabel("Days")
+ax.set_ylabel("%")
 plt.show()
