@@ -24,61 +24,81 @@ def extract(klines, startdt, enddt):
     end_ts = localtime_to_ts(enddt)
     return [i for i in klines if i[0]>= start_ts and i[0]<=end_ts]
 
+class Bot1:
+    def __init__(self, start_ts):  
+        self.positions = []
+        self.positions_val = 0.0
+        self.account = 100.0
+        self.start_time = ts_to_localtime(start_ts)
+        self.last_ts = start_ts
+        self.last_worth = self.worth()
+        self.twr = 1.0
+        self.accu_t = 0
+
+    def interest_rate(self):
+        part_of_year = float(self.accu_t) / float(365.0*24.0*60.0*60.0)
+        
+        return (self.twr ** (1/part_of_year) - 1.0) * 100
+
+    def worth(self):
+        return (self.account+self.positions_val)
+
+    def run(self, kline):
+        dt = ts_to_localtime(kline[0])
+        open_c = kline[1]
+
+        if dt.hour == 8 and dt.minute ==0 and dt.second ==0:
+            val = 10
+            self.account = self.account - val
+            self.positions.append(
+                val/open_c
+            )
+        
+        if dt.hour == 16 and dt.minute ==0 and dt.second ==0:
+            val = 0
+            for i in self.positions:
+                val += i * open_c
+        
+            self.positions = []
+            self.account += val
+        
+        self.positions_val = 0.0
+        for i in self.positions:
+            self.positions_val += i * open_c
+
+        # step end
+
+        delta_ts = kline[0] - self.last_ts
+        self.last_ts = kline[0]
+
+        delta_yield = (self.worth() - self.last_worth)/ self.last_worth + 1.0
+        self.last_worth = self.worth()
+
+        self.twr *= delta_yield  
+        self.accu_t += delta_ts 
+        return delta_ts,delta_yield
+
 klines = pickle.load(open("bdcbtc.pickle","rb"))
 
-newset_kline_dt = ts_to_localtime(klines[-1][6])
-oldest_kline_dt = ts_to_localtime(klines[0][0])
-print("first klines set opens at: %s"%( oldest_kline_dt))
-print(" last klines set closes at: %s"%( newset_kline_dt))
-
-start_date = oldest_kline_dt.date() + datetime.timedelta(days=1)
-end_date = newset_kline_dt.date()
-no_of_days = (end_date-start_date).days 
-
-set_8oc = set()
-set_16oc = set()
-for single_date in (start_date + datetime.timedelta(days=n) for n in range(no_of_days)):
-    set_8oc.add(
-        localtime_to_ts(datetime.datetime.combine(single_date, datetime.time(hour=8, minute=0, second=0)))
-    )
-    set_16oc.add(
-        localtime_to_ts(datetime.datetime.combine(single_date, datetime.time(hour=16, minute=0, second=0)))
-    )
-
-klines_8 =  [i for i in klines if i[0] in set_8oc]
-klines_16 = [i for i in klines if i[0] in set_16oc]
-klines_8_dates  = set([ts_to_localtime(i[0]).date() for i in klines_8])
-klines_16_dates = set([ts_to_localtime(i[0]).date() for i in klines_16])
-
-# remove datasets which are only in one sample
-only_in_8 = klines_8_dates- klines_16_dates
-only_in_16 = klines_16_dates- klines_8_dates
-
-klines_8 = [i for i in klines_8 if ts_to_localtime(i[0]).date() not in only_in_8]
-klines_16 = [i for i in klines_16 if ts_to_localtime(i[0]).date() not in only_in_16]
-
-dt_8 = [[i[0], ts_to_localtime(i[0]).strftime("%d.%m.%y %H:%M:%S %z")] for i in klines_8]
-dt_16 = [[i[0], ts_to_localtime(i[0]).strftime("%d.%m.%y %H:%M:%S %z")] for i in klines_16]
-
-klines_day = [[
-    ts_to_localtime(a[0]),
-    ts_to_localtime(b[0]), 
-
-    a[1], 
-    b[1], 
-    b[1]/a[1]-1.0
-] for a,b in zip(klines_8, klines_16)]
-open_t = [i[0] for i in klines_8]
-yield_ = [i[1] for i in klines_8]
-
-print (tabulate(klines_day))
+start_ts = klines[0][0]
+end_ts = ts_to_localtime(klines[-1][6])
+start_time = ts_to_localtime(start_ts)
+print("first klines set opens at: %s"%( start_time))
+print(" last klines set closes at: %s"%( end_ts))
 
 
-yield_of_strategy = (numpy.average([i[4] for i in klines_day]) ) * 100.0
+bot = Bot1(start_ts)
 
-print ("Yield of strategy: %f %%"%(yield_of_strategy))
-open_t = [i[0] for i in klines_day]
-yield_ = [(numpy.average([i[4] for i in klines_day[:idx]]) ) * 100.0 for idx, i in enumerate(klines_day)]
+bot_acc = []
+bot_ir = []
+for k in klines[1:]:
+    delta_t,yield_per_incr = bot.run(k)
+ 
+    bot_acc.append(bot.worth())
+    bot_ir.append(bot.interest_rate())
 
-plt.plot(open_t, yield_)
+open_t = [(i[0]-start_ts)/60.0/60.0/24.0 for i in klines]
+fig, ax = plt.subplots(2)
+ax[0].plot(open_t[1:], bot_ir)
+ax[1].plot( open_t[1:], bot_acc)
 plt.show()
