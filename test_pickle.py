@@ -24,6 +24,7 @@ def extract(klines, startdt, enddt):
     end_ts = localtime_to_ts(enddt)
     return [i for i in klines if i[0]>= start_ts and i[0]<=end_ts]
 
+SECONDS_PER_YEAR = 365.0*24.0*60.0*60.0
 class Bot1:
     def __init__(self, start_ts, buy_hour):  
         self.positions = []
@@ -36,10 +37,9 @@ class Bot1:
         self.accu_t = 0
         self.buy_hour = buy_hour
 
-    def interest_rate(self):
-        part_of_year = float(self.accu_t) / float(365.0*24.0*60.0*60.0)
-        
-        return (self.twr ** (1/part_of_year) - 1.0) * 100
+    def annualized_twr(self):
+        part_of_year = float(self.accu_t) / float(SECONDS_PER_YEAR)
+        return (self.twr ** (1/part_of_year) - 1.0) * 100 # percent
 
     def worth(self):
         return (self.account+self.positions_val)
@@ -87,27 +87,29 @@ print("first klines set opens at: %s"%( start_time))
 print(" last klines set closes at: %s"%( end_ts))
 
 bots = [
-    Bot1(start_ts, 6), 
-    Bot1(start_ts, 7), 
-    Bot1(start_ts, 8)
+    ("bot1(6-16)", Bot1(start_ts, 6)), 
+    ("bot1(7-16)", Bot1(start_ts, 7)), 
+    ("bot1(8-16)", Bot1(start_ts, 8))
 ]
 
-bot_ir = []
+bot_atwr = []
 for i in bots:
-    bot_ir.append([])
+    bot_atwr.append([])
 
 for idx, b in enumerate(bots):
     for k in klines[1:]:
-        b.run(k)
-        bot_ir[idx].append(b.interest_rate())
+        bot = b[1]
+        bot.run(k)
+        bot_atwr[idx].append(bot.annualized_twr())
 
 open_t = [(i[0]-start_ts)/60.0/60.0/24.0 for i in klines]
 
 fig, ax = plt.subplots(1)
-for i in bot_ir:
+for i in bot_atwr:
     ax.plot(open_t[1:], i)
-
+labels = [i[0] for i in bots]
 ax.set_title("Annualized TWR")
 ax.set_xlabel("Days")
 ax.set_ylabel("%")
+ax.legend(labels)
 plt.show()
