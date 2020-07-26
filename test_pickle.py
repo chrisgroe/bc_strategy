@@ -86,22 +86,27 @@ start_time = ts_to_localtime(start_ts)
 print("first klines set opens at: %s"%( start_time))
 print(" last klines set closes at: %s"%( end_ts))
 
+bots = [
+    Bot1(start_ts, 6), 
+    Bot1(start_ts, 7), 
+    Bot1(start_ts, 8)
+]
 
-bot_7 = Bot1(start_ts, 7)
-bot_8 = Bot1(start_ts, 8)
+bot_ir = []
+for i in bots:
+    bot_ir.append([])
 
-
-bot_7_ir = []
-bot_8_ir = []
-for k in klines[1:]:
-    bot_7.run(k)
-    bot_8.run(k)
-    bot_7_ir.append(bot_7.interest_rate())
-    bot_8_ir.append(bot_8.interest_rate())
+for idx, b in enumerate(bots):
+    for k in klines[1:]:
+        b.run(k)
+        bot_ir[idx].append(b.interest_rate())
 
 open_t = [(i[0]-start_ts)/60.0/60.0/24.0 for i in klines]
+
 fig, ax = plt.subplots(1)
-ax.plot(open_t[1:], bot_7_ir, open_t[1:], bot_8_ir)
+for i in bot_ir:
+    ax.plot(open_t[1:], i)
+
 ax.set_title("Annualized TWR")
 ax.set_xlabel("Days")
 ax.set_ylabel("%")
