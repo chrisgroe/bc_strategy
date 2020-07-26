@@ -25,7 +25,7 @@ def extract(klines, startdt, enddt):
     return [i for i in klines if i[0]>= start_ts and i[0]<=end_ts]
 
 class Bot1:
-    def __init__(self, start_ts):  
+    def __init__(self, start_ts, buy_hour):  
         self.positions = []
         self.positions_val = 0.0
         self.account = 100.0
@@ -34,6 +34,7 @@ class Bot1:
         self.last_worth = self.worth()
         self.twr = 1.0
         self.accu_t = 0
+        self.buy_hour = buy_hour
 
     def interest_rate(self):
         part_of_year = float(self.accu_t) / float(365.0*24.0*60.0*60.0)
@@ -47,7 +48,7 @@ class Bot1:
         dt = ts_to_localtime(kline[0])
         open_c = kline[1]
 
-        if dt.hour == 8 and dt.minute ==0 and dt.second ==0:
+        if dt.hour == self.buy_hour and dt.minute ==0 and dt.second ==0:
             val = 10
             self.account = self.account - val
             self.positions.append(
@@ -76,7 +77,6 @@ class Bot1:
 
         self.twr *= delta_yield  
         self.accu_t += delta_ts 
-        return delta_ts,delta_yield
 
 klines = pickle.load(open("bdcbtc.pickle","rb"))
 
@@ -87,19 +87,21 @@ print("first klines set opens at: %s"%( start_time))
 print(" last klines set closes at: %s"%( end_ts))
 
 
-bot = Bot1(start_ts)
+bot_7 = Bot1(start_ts, 7)
+bot_8 = Bot1(start_ts, 8)
 
-bot_acc = []
-bot_ir = []
+
+bot_7_ir = []
+bot_8_ir = []
 for k in klines[1:]:
-    delta_t,yield_per_incr = bot.run(k)
- 
-    bot_acc.append(bot.worth())
-    bot_ir.append(bot.interest_rate())
+    bot_7.run(k)
+    bot_8.run(k)
+    bot_7_ir.append(bot_7.interest_rate())
+    bot_8_ir.append(bot_8.interest_rate())
 
 open_t = [(i[0]-start_ts)/60.0/60.0/24.0 for i in klines]
 fig, ax = plt.subplots(1)
-ax.plot(open_t[1:], bot_ir)
+ax.plot(open_t[1:], bot_7_ir, open_t[1:], bot_8_ir)
 ax.set_title("Annualized TWR")
 ax.set_xlabel("Days")
 ax.set_ylabel("%")
