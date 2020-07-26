@@ -98,7 +98,6 @@ for k in klines[1:]:
     bot_ir.append(bot.interest_rate())
 
 open_t = [(i[0]-start_ts)/60.0/60.0/24.0 for i in klines]
-fig, ax = plt.subplots(2)
-ax[0].plot(open_t[1:], bot_ir)
-ax[1].plot( open_t[1:], bot_acc)
+fig, ax = plt.subplots(1)
+ax.plot(open_t[1:], bot_ir)
 plt.show()
